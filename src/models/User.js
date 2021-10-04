@@ -6,8 +6,14 @@ class User extends Model {
             name: DataTypes.STRING,
             email: DataTypes.STRING,
         }, {
-            sequelize
-        })
+            freezeTableName: true,
+            tableName: "users",
+            sequelize,
+        },)
+    }
+
+    static associate(models) {
+        this.hasMany(models.Event, { foreignKey: 'userId', as: 'events' })
     }
 }
 

@@ -2,6 +2,12 @@
 const User = require('../models/User')
 
 module.exports = {
+    async index(req, res) {
+        const users = await User.findAll() //Podemos usar o findOne para procurar apenas
+
+        return res.json(users)
+    },
+
     async store(req, res) {
         const { name, email } = req.body //Corpo de requisição
     
