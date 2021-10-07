@@ -5,6 +5,7 @@ class User extends Model {
         super.init({
             name: DataTypes.STRING,
             email: DataTypes.STRING,
+            password: DataTypes.STRING,
         }, {
             freezeTableName: true,
             tableName: "users",

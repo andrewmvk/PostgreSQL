@@ -1,5 +1,11 @@
 //É ele quem lida com as requisições e devolve respostas para o frontend
-const User = require('../models/User')
+const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+const secret = process.env.ACCESS_TOKEN_SECRET;
 
 module.exports = {
     async index(req, res) {
@@ -9,10 +15,89 @@ module.exports = {
     },
 
     async store(req, res) {
-        const { name, email } = req.body //Corpo de requisição
-    
-        const user = await User.create({ name, email }) //"Espera finalizar para então continuar"
+        const { name, password, email } = req.body //Corpo de requisição
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const user = await User.create({ name: name, email: email, password: hashedPassword }) //"Espera finalizar para então continuar"
         //"O método "create() cria um novo usuário"
         return res.json(user)
-    } //Método que armazena um usuário
+    }, //Método que armazena um usuário
+
+    async login(req, res) {
+        const { name, password } = req.body
+
+        const hashedPassword = await User.findAll({
+            where: {
+                name: {
+                    [Op.iLike]: name
+                }
+            },
+            attributes: ['password']
+        })
+
+        if (!hashedPassword[0]) {
+            return res.status(400).json({ error: 'Usuário não encontrado!' })
+        }
+
+        if (await bcrypt.compare(password, hashedPassword[0].password)) {
+            const user = await User.findAll({
+                where: {
+                    name: {
+                        [Op.iLike]: name
+                    },
+                },
+                attributes: ['id', 'name', 'email'],
+                include: {
+                    association: 'events',
+                    attributes: ['id', 'name', 'date', 'description', 'createdAt', 'updatedAt']
+                }
+            })
+            const userId = user[0].id;
+            const token = jwt.sign({ userId }, secret, { expiresIn: 3600 });
+
+            return res.json({ user, token })
+        } else {
+            return res.json({ response: 'Tente novamente' })
+        }
+    },
+
+    async edit(req, res) {
+        const { name, email, password } = req.body
+        let hP = null
+
+        const user = User.findAll({
+            where: { [Op.or]: [
+            { name: { [Op.iLike]: name } },
+            { email: { [Op.iLike]: email } }
+            ] }
+        })
+
+        if (!name) {
+            name = user[0].name
+        }
+
+        if (!email) {
+            email = user[0].email
+        }
+
+        if (!password) {
+            hP = user[0].password
+        } else {
+            hP = await bcrypt.hash(password, 10)
+        }
+
+        User.update(
+            {
+                name: name,
+                email: email,
+                password: hP
+            },
+            {
+                where: { [Op.or]: [
+                    { name: { [Op.iLike]: name } },
+                    { email: { [Op.iLike]: email } }
+                ] }
+            }
+        ).then(() => res.send("Sucesso!"))
+    }
 }

@@ -11,6 +11,7 @@ module.exports = {
             //Para essa associação precisamos do relacionamento no model do user (associate)
         });
         
+        console.log(req.userId + ' fez essa chamada!')
         //const event = await Event.findAll({ where: { userId } });
         //Forma de buscar apenas os eventos de um certo usuário com o id dele como parâmetro
         return res.json(user);
