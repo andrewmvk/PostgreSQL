@@ -63,40 +63,48 @@ module.exports = {
 
     async edit(req, res) {
         const { name, email, password } = req.body
-        let hP = null
 
-        const user = User.findAll({
-            where: { [Op.or]: [
-            { name: { [Op.iLike]: name } },
-            { email: { [Op.iLike]: email } }
-            ] }
+        let hashedPassword = null;
+        let { newName, newEmail } = []
+
+        const user = await User.findAll({
+            where: {
+                id: req.userId
+            }
         })
 
-        if (!name) {
-            name = user[0].name
+        if(!user[0]){
+            return res.status(400).json({error: 'Usuário não encontrado!'})
         }
 
-        if (!email) {
-            email = user[0].email
-        }
-
-        if (!password) {
-            hP = user[0].password
+        if(!name){
+            newName = user[0].name
         } else {
-            hP = await bcrypt.hash(password, 10)
+            newName = name
+        }
+
+        if(!email){
+            newEmail = user[0].email
+        } else {
+            newEmail = email
+        }
+
+        if(!password){
+            hashedPassword = user[0].password
+        } else {
+            hashedPassword = await bcrypt.hash(password, 10)
         }
 
         User.update(
             {
-                name: name,
-                email: email,
-                password: hP
+                name: newName,
+                email: newEmail,
+                password: hashedPassword
             },
             {
-                where: { [Op.or]: [
-                    { name: { [Op.iLike]: name } },
-                    { email: { [Op.iLike]: email } }
-                ] }
+                where: {
+                    id: req.userId
+                }
             }
         ).then(() => res.send("Sucesso!"))
     }

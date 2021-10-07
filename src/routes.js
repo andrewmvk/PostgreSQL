@@ -9,7 +9,7 @@ routes.get('/users', UserController.index); //Listar os usuários
 routes.post('/users', UserController.store); //Rota para cadastro de usuários
 //UserController.store está chamando a função store do UserController
 routes.post('/users/login', UserController.login);
-routes.put('/users/edit', UserController.edit);
+routes.put('/users/edit', verifyJWT, UserController.edit);
 
 routes.get('/users/:userId/events', verifyJWT, EventController.index);
 routes.post('/users/:userId/events', EventController.store);
