@@ -9,16 +9,27 @@ const secret = process.env.ACCESS_TOKEN_SECRET;
 
 module.exports = {
     async index(req, res) {
-        const users = await User.findAll() //Podemos usar o findOne para procurar apenas
+        const user = await User.findAll({
+            where: {
+                id: req.userId
+            }
+        })
 
-        return res.json(users)
+        if(user[0].admin == true){
+            const users = await User.findAll() //Podemos usar o findOne para procurar apenas
+
+            return res.json(users)
+        } else {
+            return res.status(401).send()
+        }
+        
     },
 
     async store(req, res) {
-        const { name, password, email } = req.body //Corpo de requisição
+        const { name, password, email, admin } = req.body //Corpo de requisição
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        const user = await User.create({ name: name, email: email, password: hashedPassword }) //"Espera finalizar para então continuar"
+        const user = await User.create({ name: name, email: email, password: hashedPassword, admin: admin }) //"Espera finalizar para então continuar"
         //"O método "create() cria um novo usuário"
         return res.json(user)
     }, //Método que armazena um usuário
@@ -106,6 +117,6 @@ module.exports = {
                     id: req.userId
                 }
             }
-        ).then(() => res.send("Sucesso!"))
+        ).then(() => res.status(200).send())
     }
 }

@@ -5,7 +5,7 @@ const { verifyJWT } = require('./verify');
 
 const routes = express.Router();
 
-routes.get('/users', UserController.index); //Listar os usuários
+routes.get('/users', verifyJWT, UserController.index); //Listar os usuários
 routes.post('/users', UserController.store); //Rota para cadastro de usuários
 //UserController.store está chamando a função store do UserController
 routes.post('/users/login', UserController.login);
