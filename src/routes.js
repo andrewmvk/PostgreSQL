@@ -11,8 +11,9 @@ routes.post('/users', UserController.store); //Rota para cadastro de usuários
 routes.post('/users/login', UserController.login);
 routes.put('/users/edit', verifyJWT, UserController.edit);
 
-routes.get('/users/:userId/events', verifyJWT, EventController.index);
-routes.post('/users/:userId/events', EventController.store);
-routes.delete('/users/:userId/events', EventController.delete);
+routes.get('/users/events', verifyJWT, EventController.index);
+routes.post('/users/events', verifyJWT, EventController.store);
+routes.delete('/users/events', verifyJWT, EventController.delete);
+routes.put('/users/events', verifyJWT, EventController.edit);
 
 module.exports = routes;

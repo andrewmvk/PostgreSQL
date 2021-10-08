@@ -3,10 +3,12 @@ const User = require('../models/User')
 
 module.exports = {
     async index(req, res) {
-        const { userId } = req.params;
-
-        const user = await User.findByPk(userId, {
-            include: { association: 'events' }
+        const user = await User.findByPk(req.userId, {
+            attributes: ['id','name','email','createdAt'],
+            include: { 
+                association: 'events', 
+                attributes: ['id', 'name', 'date', 'description', 'createdAt', 'updatedAt']
+             }
             //Associação para buscar tanto o usuário quanto seus eventos
             //Para essa associação precisamos do relacionamento no model do user (associate)
         });
@@ -19,41 +21,106 @@ module.exports = {
     },
 
     async store(req, res) {
-        const { userId } = req.params; //Parâmetro que vem da rota
-        const { name, description, date } = req.body;
+        //const { userId } = req.params; //Parâmetro que vem da rota
+        const { name, description, date } = await req.body;
+        const userId = req.userId;
+        let newDescription = undefined;
+
+        if(!description){
+            newDescription = null
+        } else {
+            newDescription = description
+        }
     
-        const user = await User.findByPk(userId);//Primary Key
+        const user = await User.findByPk(req.userId);//Primary Key
     
         if (!user) {
-            return res.status(400).json({ error: 'User not found' })
+            return res.status(404).json({ error: 'Usuário não encontrado' })
         } //Se o "user" retornar "null" será mostrado uma mensagem de erro
 
         const event = await Event.create({
-            name,
-            description,
-            date,
-            userId,
+            name: name,
+            description: newDescription,
+            date: date,
+            userId: userId,
         })
 
         return res.json(event);
     },
 
     async delete(req, res) {
-        const { userId } = req.params;
         const { id } = req.body;
 
-        const user = await User.findByPk(userId);
+        if(!id) {
+            return res.status(400).json({ error: 'Id do evento não informado!' })
+        }
+
+        const user = await User.findByPk(req.userId);
 
         if (!user) {
-            return res.status(400).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'Usuário não encontrado!' });
         }
 
         const event = await Event.findOne({
             where: { id }
         });
 
+        if(!event) {
+            return res.status(400).json({ error: 'Evento não encontrado!' })
+        }
+
         await event.destroy(user);
 
         return res.json();
+    },
+
+    async edit(req, res) {
+        const { id, name, description, date } = req.body
+        let { newName, newDescription, newDate } = []
+
+        const user = await User.findByPk(req.userId)
+
+        if(!user) {
+            return res.status(404).json({ error: 'Usuário não encontrado!' })
+        }
+
+        const event = await Event.findOne({
+            where: { id }
+        })
+
+        if(!event) {
+            return res.status(404).json({ error: 'Evento não encontrado!' })
+        }
+        
+        if(!name) {
+            newName = event.name
+        } else {
+            newName = name
+        }
+
+        if(!description) {
+            newDescription = null
+        } else {
+            newDescription = description
+        } 
+
+        if(!date) {
+            newDate = event.date
+        } else {
+            newDate = date
+        }
+
+        Event.update(
+            {
+                name: newName,
+                description: newDescription,
+                date: newDate
+            },
+            {
+                where: { userId: req.userId }
+            }
+            ).then(() => res.status(200).send())
+
+        return res.status(200).send();
     }
 }
