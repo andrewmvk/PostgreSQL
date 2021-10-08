@@ -27,7 +27,7 @@ module.exports = {
 
     async store(req, res) {
         const { name, password, email, admin } = req.body //Corpo de requisição
-        let newAdmin = null
+        let newAdmin = false
 
         if(email.includes(" "||"@"||".com")){
             return res.status(400).json({ error: 'Formato de email incorreto!' })
@@ -50,9 +50,9 @@ module.exports = {
             return res.status(400).json({ error: 'Usuário já existente' })
         }
 
-        if(!admin) {
+        if(admin == "false"||!admin) {
             newAdmin = false
-        } else if (admin === true) {
+        } else if (admin == "true") {
             newAdmin = true
         } else {
             return res.status(400).send()
